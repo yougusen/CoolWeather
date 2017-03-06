@@ -18,11 +18,11 @@ public class Forecast {
 
     public class Temperature{
          public String max;
-        public String min;
+         public String min;
     }
 
     public class More {
-        @SerializedName("txt")
+        @SerializedName("txt_d")
         public String info;
     }
 }

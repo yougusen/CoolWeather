@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -82,10 +83,20 @@ public class ChooseAreaFragment extends Fragment {
                     queryCounties();
                 } else if (currentLevel == LEVEL_COUNTY){
                     String weatherId = countyList.get(position).getWeatherId();
-                    Intent intent = new Intent(getActivity(),WeatherActivity.class);
-                    intent.putExtra("weather_id",weatherId);
-                    startActivity(intent);
-                    getActivity().finish();
+                   if(getActivity() instanceof MainActivity){
+
+                       Intent intent = new Intent(getActivity(),WeatherActivity.class);
+                       intent.putExtra("weather_id",weatherId);
+                       startActivity(intent);
+                       getActivity().finish();
+                   }else if(getActivity() instanceof WeatherActivity){
+
+                       WeatherActivity activity= (WeatherActivity) getActivity();
+                       activity.drawerLayout.closeDrawers();
+                       activity.swipeRefresh.setRefreshing(true);
+                       activity.requestWeather(weatherId);
+
+                   }
                 }
             }
         });
@@ -169,6 +180,7 @@ public class ChooseAreaFragment extends Fragment {
 
 
     private void queryFromServer(String address,final String type){
+        Log.d("queryFromServer",address);
         showProgressDialog();
         HttpUtil.sendOkHttpRequest(address, new Callback() {
             @Override
@@ -186,13 +198,16 @@ public class ChooseAreaFragment extends Fragment {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 String responseText = response.body().string();
+                Log.d("responseText",responseText);
                 Boolean result = false;
                 if ("province".equals(type)){
                     result = Utility.handleProvinceResponse(responseText);
                 } else if ("city".equals(type)){
-                    result = Utility.handleCityResponse(responseText,selectedProvince.getId());
-                } else if ("county".equals(type)){Utility.handleCountyResponse(responseText,selectedCity.getId());
 
+                    result = Utility.handleCityResponse(responseText,selectedProvince.getId());
+                } else if ("county".equals(type)){
+
+                    result=Utility.handleCountyResponse(responseText,selectedCity.getId());
                 }
                 if (result){
                     getActivity().runOnUiThread(new Runnable() {
@@ -219,6 +234,8 @@ public class ChooseAreaFragment extends Fragment {
             progressDialog.setMessage("正在加载...");
             progressDialog.setCanceledOnTouchOutside(false);
         }
+        progressDialog.show();
+
     }
     private void closeProgressDialog(){
         if (progressDialog != null){
